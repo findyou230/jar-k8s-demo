@@ -1,0 +1,43 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-web
+  namespace: webapp
+spec: 
+  replicas: 3
+  selector: 
+    matchLabels:
+      app: nginx-web
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: nginx-web
+        version: v1
+    spec:
+      containers:
+      - name: nginx
+        image: wangyanglinux/myapp:v1
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        env: 
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace 
+        volumeMounts:
+        - name: ng-log
+          mountPath: /var/log/nginx
+          subPathExpr: $(POD_NAMESPACE)/$(POD_NAME)
+      volumes:
+      - name: ng-log
+        hostPath:
+          path: /data/log/nginx
+          type: DirectoryOrCreate
