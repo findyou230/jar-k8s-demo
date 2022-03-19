@@ -48,7 +48,7 @@ pipeline{
 		stage('Pull program'){
 			steps{      //包含一个或多个在stage块中执行的step序列
 				echo "2. To start, pull the Git project"
-				git branch: "${git_branch}", credentialsId: "${github_auth2}", url: "${git_repo}"
+				//git branch: "${git_branch}", credentialsId: "${github_auth2}", url: "${git_repo}"
 				checkout scm  
 				script { 
  					build_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
