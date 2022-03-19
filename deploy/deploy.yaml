@@ -22,7 +22,7 @@ spec:
       containers:
         - name: ${APP_NAME}
           image: ${IMAGE_URL}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent   #Always
           resources:
             limits:
                cpu: 100m
