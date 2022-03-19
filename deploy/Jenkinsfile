@@ -50,10 +50,10 @@ pipeline{
 				echo "2. To start, pull the Git project"
 				git branch: "${git_branch}", credentialsId: "${github_auth2}", url: "${git_repo}"
 				checkout scm  
-			script { 
- 				build_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-				if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != null) {
-				build_tag = "${env.BRANCH_NAME}-${build_tag}"
+				script { 
+ 					build_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+					if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != null) {
+					build_tag = "${env.BRANCH_NAME}-${build_tag}"
 				}					
 			} 
 			echo "Build Tag${build_tag}"
