@@ -65,7 +65,6 @@ pipeline{
 				echo "3. Compiling with Maven"
 				//sh "${mvn_dir}/bin/${mvn_cmd}"
 				sh "pwd && ls"
-				//sh "mkdir project_dir && cp ${jar_name} ./project_dir/  && cp Dockerfile ./project_dir/"
 				sh "mkdir project_dir && cp ${jar_name} ./project_dir/"
 				sh "ls -l ./project_dir/"
 			}
@@ -83,7 +82,7 @@ pipeline{
 			steps{      //如果源路径是个目录,如果目标路径是个已经存在的目录,则docker会把源路径目录下的文件拷贝到该目录下。
 				echo "5. build docker images and push to Repositories"
 				sh "pwd"
-				sh "mv Dockerfile ./project_dir && ls && cd project_dir && ls -l"
+				sh "mv Dockerfile ./project_dir/ && ls && cd project_dir && ls -l"
 				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag} ."
 				sh "docker login harbor.fruitshop.com -u admin -p 12345qwert"
 				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}"
