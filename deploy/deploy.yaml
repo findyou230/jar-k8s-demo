@@ -4,7 +4,7 @@ metadata:
   name: "${APP_NAME}"
   labels:
     app: ${APP_NAME}
-  namespace: ${NAMESPACE_NAME}
+  namespace: $NAMESPACE_NAME
 spec:
   replicas: ${REP_NAME}
   selector:
@@ -18,7 +18,7 @@ spec:
         version: v1
     spec:
       imagePullSecrets:
-        - name: registry-key
+        - name: $SECRET_NAME
       containers:
         - name: ${APP_NAME}
           image: ${IMAGE_URL}
