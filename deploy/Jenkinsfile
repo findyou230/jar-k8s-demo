@@ -1,4 +1,3 @@
-重要
 // 公共
 def repository_url = "harbor.fruitshop.com"
 def image_dir = "app"
