@@ -1,52 +1,128 @@
-podTemplate(label: 'jnlp-slave', cloud: 'kubernetes', namespace: 'jenkins', serviceAccount: 'jenkins-admin', containers: [
-    containerTemplate(
-        name: 'jnlp', 
-        image: 'xiaozhagn/jenkins-slave', 
-    ),
-  ],
-  volumes: [
-    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
-    hostPathVolume(mountPath: '/usr/bin/docker', hostPath: '/usr/bin/docker'),
-    hostPathVolume(mountPath: '/usr/bin/kubectl', hostPath: '/usr/bin/kubectl'),
-    hostPathVolume(mountPath: '/root/.kube', hostPath: '/root/.kube'),
-  ],
-  imagePullSecrets: ['registry-pull-secret'],
-) 
-{
-  node("jnlp-slave"){
-      stage('Git Checkout'){
-         checkout([$class: 'GitSCM', branches: [[name: '*/master']], 
-                   doGenerateSubmoduleConfigurations: false, 
-                   extensions: [], submoduleCfg: [], 
-                   userRemoteConfigs: [[credentialsId: '1f2e87c4-9eca-43b1-b9d4-f1dbb8f6e490', 
-                   url: 'ssh://git@172.25.0.31:2222/root/demo.git']]])
-      }
-      stage('Unit Testing'){
-      	echo "Unit Testing..."
-      }
-      stage('Build and Push Image'){
-          sh '''
-          docker login -u admin -p harbor12345 hub.sx.com
-          docker tag  xiaozhagn/podnginx:v5 hub.sx.com/projectdemo/demo  
-          docker push  hub.sx.com/projectdemo/demo:latest
-          '''
-      }
-      /**
-     stage("Deploy To Kuberates Cluster"){
-       kubernetesDeploy(
-         configs: 'deploy/deploy.yaml', 
-         kubeconfigId: '81ce11c3-20e5-4b05-a4a1-e8d46a9cb8e0',
-         enableConfigSubstitution: true
-        )
-    } **/  
-      stage('Deploy to K8S'){
-          sh '''
-          kubectl apply -f deploy/deploy.yaml
-          '''
-      }
-      stage('success '){
-          echo "success..."
-      }
-  }
-}
+重要
+// 公共
+def repository_url = "harbor.fruitshop.com"
+def image_dir = "app"
 
+// 项目
+def project = "product_demo"
+def app_name = "demo-app"
+def git_repo = "https://github.com/findyou230/jar-k8s-demo.git"
+def git_branch = "master"
+def mvn_dir = "/opt/maven"
+def target_dir = "./target"
+def mvn_cmd = "mvn clean package -Pproduct -Dmaven.test.skip=true"
+def base_image = "harbor.fruitshop.com/base/openjdk:8u181-jdk"
+def jar_name = "hello-0.0.1-SNAPSHOT.jar"
+def rep_num = "2"
+def namespace_name = "webapp"
+def secret_name = "harbor-secret-webapp"
+def dns_name = "demo-web.example.com"
+
+// 认证
+def docker_registry_auth = "6170ebd8-3b94-409b-ad69-2a4753701041"
+def gitlab_auth1 = "gitlab-user-admin"
+def gitlab_auth2 = "gitlab-user-zhangsan"
+def github_auth2 = "github-email-id"
+def k8s_auth = "k8s-cluster01-kube-config"    //存储在 Jenkins 凭证存储中的 kubeconfig 的凭证 ID
+
+pipeline{
+	agent{
+		kubernetes{
+			label "jenkins-agent"
+			cloud 'k8s-cluster01'
+        }
+    }
+    stages{
+ 	    stage("Check info"){
+ 		    steps{
+ 			    script{
+ 				    echo "1. First, let's test the first step"
+ 				    echo "先查看下pod的IP"
+ 				    sh "ip a"
+ 				    echo "查看下java的版本"
+ 				    sh "java -version"
+ 				    echo "查看docker版本"
+ 				    sh "docker -v"
+ 			    }
+            }
+ 	    }
+        stage('Pull program'){
+			steps{      //包含一个或多个在stage块中执行的step序列
+				echo "2. To start, pull the Git project"
+				git branch: "${git_branch}", credentialsId: "${github_auth2}", url: "${git_repo}"
+				//checkout scm  //‘checkout scm’ is only available when using “Multibranch Pipeline” or “Pipeline script from SCM”
+                script { 
+                    build_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
+                    //if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != null) {
+                    //build_tag = "${env.BRANCH_NAME}-${build_tag}"
+				    //}					
+                } 
+				echo "Build Tag${build_tag}"
+				sh "pwd && ls"
+            }
+        }
+        stage("Compile"){
+            steps{
+                echo "3. Compiling with Maven"
+                //sh "${mvn_dir}/bin/${mvn_cmd}"
+				sh "pwd && ls"
+                //sh "mkdir project_dir && cp ${jar_name} ./project_dir/  && cp Dockerfile ./project_dir/"
+                sh "mkdir project_dir && cp ${jar_name} ./project_dir/"
+                sh "ls -l ./project_dir/"
+            }
+        }
+ 	    stage("Check pod"){
+ 	        steps{
+				echo "4. Check the POD and kubectl command before building"
+ 	            sh "kubectl get nodes"
+				sh "kubectl get pod -n webapp"
+ 	            sh "kubectl get pod -n jenkins"
+				sh "ping harbor.fruitshop.com -c 3"
+ 	        }
+ 	    }
+ 	    stage("Build image"){
+ 		    steps{      //如果源路径是个目录,如果目标路径是个已经存在的目录,则docker会把源路径目录下的文件拷贝到该目录下。
+			    echo "5. build docker images and push to Repositories"
+				sh "cd project_dir  && pwd"
+				writeFile file: "Dockerfile", text: """FROM harbor.fruitshop.com/base/openjdk:8u181-jdk
+				RUN mkdir -p /web/app
+                COPY *.jar /web/app/"""
+				sh "mv  Dockerfile ./project_dir && ls && cd project_dir && ls -l"
+				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag} ."
+                sh "docker login harbor.fruitshop.com -u admin -p 12345qwert"
+				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}"
+ 	        }
+        }
+ 	    stage("Deploy"){
+ 	        steps{
+				script{
+					try {
+						echo "6. Deploy the service to the Kubernetes cluster"
+						echo "${namespace_name}"
+						sh "pwd && cat ./deploy/deploy.yaml"
+						script{
+						    sh "sed -i 's#\$NAMESPACE_NAME#${namespace_name}#g' ./deploy/deploy.yaml"
+                            sh "sed -i 's#\${IMAGE_URL}#harbor.fruitshop.com/app/myapp:v1#g' ./deploy/deploy.yaml"
+                            sh "sed -i 's#\${SECRET_NAME}#${secret_name}#g' ./deploy/deploy.yaml"
+                            sh "sed -i 's#\${APP_NAME}#${app_name}#g' ./deploy/deploy.yaml"
+                            sh "sed -i 's#\${REP_NUM}#${rep_num}#g' ./deploy/deploy.yaml"
+						}
+                        sh "cat ./deploy/deploy.yaml"						
+						sh "kubectl apply -f ./deploy/deploy.yaml"
+						sh "sleep 10 && kubectl get pod -n webapp"
+						println "hooray, success"
+					}
+					catch (exc)	{  //如果try执行失败，则执行catch部分
+						println "oh no! Deployment failed! "
+						println exc
+					}
+				}
+ 	        }
+ 	    }
+		stage("Finally"){
+			steps{
+				echo "构建，部署完成，请检查日志，确认没有报错信息，服务启动是否正常"
+			}
+		}
+    }
+}
