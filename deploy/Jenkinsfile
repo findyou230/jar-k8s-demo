@@ -97,7 +97,7 @@ pipeline{
 						sh "pwd && cat ./deploy/deploy.yaml"
 						script{
 							sh "sed -i 's#\$NAMESPACE_NAME#${namespace_name}#g' ./deploy/deploy.yaml"
-							sh "sed -i 's#\${IMAGE_URL}#harbor.fruitshop.com/app/myapp:v1#g' ./deploy/deploy.yaml"
+							sh "sed -i 's#\${IMAGE_URL}#${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${SECRET_NAME}#${secret_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${APP_NAME}#${app_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${REP_NUM}#${rep_num}#g' ./deploy/deploy.yaml"
