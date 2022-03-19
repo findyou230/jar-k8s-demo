@@ -6,7 +6,7 @@ metadata:
     app: ${APP_NAME}
   namespace: $NAMESPACE_NAME
 spec:
-  replicas: ${REP_NAME}
+  replicas: ${REP_NUM}
   selector:
     matchLabels:
       app: ${APP_NAME}
@@ -18,7 +18,7 @@ spec:
         version: v1
     spec:
       imagePullSecrets:
-        - name: $SECRET_NAME
+        - name: ${SECRET_NAME}
       containers:
         - name: ${APP_NAME}
           image: ${IMAGE_URL}
