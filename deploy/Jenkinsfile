@@ -5,7 +5,7 @@ def image_dir = "sunshine-technology"
 // 项目
 def app_name = "demo-app"
 def git_repo = "https://github.com/findyou230/jar-k8s-demo.git"
-def git_branch = "tocce"
+def git_branch = "master"
 def mvn_dir = "/opt/maven"
 def target_dir = "./target"
 def mvn_cmd = "mvn clean package -Pproduct -Dmaven.test.skip=true"
