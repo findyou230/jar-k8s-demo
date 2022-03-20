@@ -1,0 +1,51 @@
+podTemplate(label: 'jnlp-slave', cloud: 'kubernetes', namespace: 'jenkins', serviceAccount: 'jenkins-admin', containers: [
+    containerTemplate(
+        name: 'jnlp', 
+        image: 'xiaozhagn/jenkins-slave', 
+    ),
+  ],
+  volumes: [
+    hostPathVolume(mountPath: '/var/run/docker.sock', hostPath: '/var/run/docker.sock'),
+    hostPathVolume(mountPath: '/usr/bin/docker', hostPath: '/usr/bin/docker'),
+    hostPathVolume(mountPath: '/usr/bin/kubectl', hostPath: '/usr/bin/kubectl'),
+    hostPathVolume(mountPath: '/root/.kube', hostPath: '/root/.kube'),
+  ],
+  imagePullSecrets: ['registry-pull-secret'],
+) 
+{
+  node("jnlp-slave"){
+      stage('Git Checkout'){
+         checkout([$class: 'GitSCM', branches: [[name: '*/master']], 
+                   doGenerateSubmoduleConfigurations: false, 
+                   extensions: [], submoduleCfg: [], 
+                   userRemoteConfigs: [[credentialsId: '1f2e87c4-9eca-43b1-b9d4-f1dbb8f6e490', 
+                   url: 'ssh://git@172.25.0.31:2222/root/demo.git']]])
+      }
+      stage('Unit Testing'){
+      	echo "Unit Testing..."
+      }
+      stage('Build and Push Image'){
+          sh '''
+          docker login -u admin -p harbor12345 hub.sx.com
+          docker tag  xiaozhagn/podnginx:v5 hub.sx.com/projectdemo/demo  
+          docker push  hub.sx.com/projectdemo/demo:latest
+          '''
+      }
+      /**
+     stage("Deploy To Kuberates Cluster"){
+       kubernetesDeploy(
+         configs: 'deploy/deploy.yaml', 
+         kubeconfigId: '81ce11c3-20e5-4b05-a4a1-e8d46a9cb8e0',
+         enableConfigSubstitution: true
+        )
+    } **/  
+      stage('Deploy to K8S'){
+          sh '''
+          kubectl apply -f deploy/deploy.yaml
+          '''
+      }
+      stage('success '){
+          echo "success..."
+      }
+  }
+}
