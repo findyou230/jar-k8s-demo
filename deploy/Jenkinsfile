@@ -1,21 +1,19 @@
 // 公共
-def repository_url = "harbor.fruitshop.com"
-def image_dir = "app"
+def repository_url = "swr.cn-north-4.myhuaweicloud.com"
+def image_dir = "sunshine-technology"
 
 // 项目
-def project = "product_demo"
 def app_name = "demo-app"
 def git_repo = "https://github.com/findyou230/jar-k8s-demo.git"
-def git_branch = "master"
+def git_branch = "tocce"
 def mvn_dir = "/opt/maven"
 def target_dir = "./target"
 def mvn_cmd = "mvn clean package -Pproduct -Dmaven.test.skip=true"
-def base_image = "harbor.fruitshop.com/base/openjdk:8u181-jdk"
+def base_image = "swr.cn-north-4.myhuaweicloud.com/sunshine-technology/openjdk:8u181-jdk"
 def jar_name = "hello-0.0.1-SNAPSHOT.jar"
 def rep_num = "2"
 def namespace_name = "webapp"
-def secret_name = "harbor-secret-webapp"
-def dns_name = "demo-web.example.com"
+def secret_name = "default-secret"
 
 // 认证
 def docker_registry_auth = "6170ebd8-3b94-409b-ad69-2a4753701041"
@@ -28,7 +26,7 @@ pipeline{
 	agent{
 		kubernetes{
 			label "jenkins-agent"
-			cloud 'k8s-cluster01'
+			cloud 'k8s-test'
         	}
 	}
 	stages{
@@ -84,7 +82,7 @@ pipeline{
 				sh "pwd"
 				sh "mv Dockerfile ./project_dir/ && ls && cd project_dir && ls -l"
 				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag} ."
-				sh "docker login harbor.fruitshop.com -u admin -p 12345qwert"
+				sh "docker login -u cn-north-4@PK1Q8D5DI8E3ZINY4J8D -p 9f3376de5e76d29daa9c50b0f5505d7c5a6b4a2420cd4720a959453f916f564f swr.cn-north-4.myhuaweicloud.com"
 				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}"
 			}
 		}
@@ -96,7 +94,7 @@ pipeline{
 						echo "${namespace_name}"
 						sh "pwd && cat ./deploy/deploy.yaml"
 						script{
-							sh "sed -i 's#\$NAMESPACE_NAME#${namespace_name}#g' ./deploy/deploy.yaml"
+							sh "sed -i 's#\${NAMESPACE_NAME}#${namespace_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${IMAGE_URL}#${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${SECRET_NAME}#${secret_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${APP_NAME}#${app_name}#g' ./deploy/deploy.yaml"
