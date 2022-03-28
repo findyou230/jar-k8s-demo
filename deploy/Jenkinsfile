@@ -29,6 +29,10 @@ pipeline{
 			cloud 'k8s-test'
         	}
 	}
+	tools{
+        	// Install the Maven version configured as "M3" and add it to the path.
+		maven "M3"
+	}
 	stages{
 		stage("Check info"){
 			steps{
@@ -62,6 +66,7 @@ pipeline{
 			steps{
 				echo "3. Compiling with Maven"
 				//sh "${mvn_dir}/bin/${mvn_cmd}"
+				sh "mvn -v"
 				sh "pwd && ls"
 				sh "mkdir project_dir && cp ${jar_name} ./project_dir/"
 				sh "ls -l ./project_dir/"
