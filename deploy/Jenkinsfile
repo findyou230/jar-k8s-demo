@@ -17,10 +17,9 @@ def secret_name = "default-secret"
 
 // 认证
 def docker_registry_auth = "6170ebd8-3b94-409b-ad69-2a4753701041"
-def gitlab_auth1 = "gitlab-user-admin"
-def gitlab_auth2 = "gitlab-user-zhangsan"
-def github_auth2 = "github-email-id"
-def k8s_auth = "k8s-cluster01-kube-config"    //存储在 Jenkins 凭证存储中的 kubeconfig 的凭证 ID
+def gitlab_auth = "gitlab-user-admin"
+def github_auth = "github-email-id"
+def k8s_auth = "k8s-test-kube-config"    //存储在 Jenkins 凭证存储中的 kubeconfig 的凭证 ID
 
 pipeline{
 	agent{
