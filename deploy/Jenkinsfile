@@ -1,5 +1,6 @@
-// 公共 To CCE
+// 公共
 def repository_url = "swr.cn-north-4.myhuaweicloud.com"
+def region_name = "cn-north-4"
 def image_dir = "sunshine-technology"
 
 // 项目
@@ -15,7 +16,6 @@ def namespace_name = "webapp"
 def secret_name = "default-secret"
 
 // 认证
-def docker_registry_auth = "6170ebd8-3b94-409b-ad69-2a4753701041"
 def gitlab_auth = "gitlab-user-admin"
 def github_auth = "github-email-id"
 def k8s_auth = "k8s-test-kube-config"    //存储在 Jenkins 凭证存储中的 kubeconfig 的凭证 ID
@@ -23,14 +23,10 @@ def k8s_auth = "k8s-test-kube-config"    //存储在 Jenkins 凭证存储中的 
 pipeline{
 	agent{
 		kubernetes{
-			cloud 'cluster-test'
+			cloud "cluster-test"
 			label "jenkins-agent"
-        	}
+        }
 	}
-	//tools{
-        	// Install the Maven version configured as "M3" and add it to the path.
-		//maven "M3"
-	//}
 	stages{
 		stage("Check info"){
 			steps{
@@ -48,48 +44,49 @@ pipeline{
 		stage('Pull program'){
 			steps{      //包含一个或多个在stage块中执行的step序列
 				echo "2. To start, pull the Git project"
-				//git branch: "${git_branch}", credentialsId: "${github_auth2}", url: "${git_repo}"
-				checkout scm  
+				git branch: "${git_branch}", credentialsId: "${github_auth}", url: "${git_repo}"
+				//checkout scm  
 				script { 
  					build_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
-					if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != null) {
-					build_tag = "${env.BRANCH_NAME}-${build_tag}"
-				}					
-			} 
-			echo "Build Tag${build_tag}"
-			sh "pwd && ls"
+				//	if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != null) {
+				//	build_tag = "${env.BRANCH_NAME}-${build_tag}"
+				//  }					
+			    } 
+				echo "Build Tag ${build_tag}"
+				sh "pwd && ls"
 			}
 		}
 		stage("Compile"){
 			steps{
 				echo "3. Compiling with Maven"
-				//sh "${mvn_dir}/bin/${mvn_cmd}"
 				//sh "mvn -v"
-				sh "pwd && ls"
-				sh "mkdir project_dir && cp ${jar_name} ./project_dir/"
-				sh "ls -l ./project_dir/"
+				//sh "${mvn_cmd}"
+				sh "pwd && ls && rm -rf project_dir"
+				sh "mkdir ./project_dir && cp ${jar_name} ./project_dir/"
+				sh "ls ./project_dir/"
 			}
 		}
 		stage("Check pod"){
  	        	steps{
 				echo "4. Check the POD and kubectl command before building"
-                		sh "kubectl get nodes"
-				sh "kubectl get pod -n webapp"
-                		sh "kubectl get pod -n jenkins"
+				sh "kubectl get nodes"
+				sh "kubectl get pod -n jenkins"
+				//sh "ping swr.cn-north-4.myhuaweicloud.com -c 3"
  	        	}
 		}
 		stage("Build image"){
 			steps{      //如果源路径是个目录,如果目标路径是个已经存在的目录,则docker会把源路径目录下的文件拷贝到该目录下。
 				echo "5. build docker images and push to Repositories"
-				sh "pwd && ls -l && rm -rf project_dir"
-				sh "mkdir project_dir && mv Dockerfile ./project_dir/ && ls && cd project_dir && ls -l"
-				
+				sh "pwd"
+				sh "cd project_dir  && pwd"
+				sh "pwd"
+				sh "mv Dockerfile ./project_dir/ && ls && cd project_dir && ls -l"
 				//使用jenkins中secret text类型的credentials的特定方法
 			withCredentials([string(credentialsId: 'jenkins-access-key-id', variable: 'ACCESS_KEY_ID'),
 				string(credentialsId: 'jenkins-secret-access-key', variable: 'SECRET_ACCESS_KEY')]) {
 				//节点执行docker login命令进行认证
 				sh "docker login -u ${region_name}@${ACCESS_KEY_ID} -p ${SECRET_ACCESS_KEY} ${repository_url}"
-				//构建镜像
+                //构建镜像
 				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag} ."
 				//推送镜像到华为云镜像仓库				
 				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}"
@@ -102,16 +99,18 @@ pipeline{
 					try {
 						echo "6. Deploy the service to the Kubernetes cluster"
 						echo "${namespace_name}"
-						sh "pwd && cat ./deploy/deploy.yaml"
+						//sh "rm -rf /opt/k8s/yaml/deploy.yaml"
+						//sh "cp /opt/k8s/deploy-template.yaml /opt/k8s/yaml/deploy.yaml"
+						sh "cat ./deploy/deploy.yaml"
 						script{
-							sh "sed -i 's#\${NAMESPACE_NAME}#${namespace_name}#g' ./deploy/deploy.yaml"
+							sh "sed -i 's#\$NAMESPACE_NAME#${namespace_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${IMAGE_URL}#${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${SECRET_NAME}#${secret_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${APP_NAME}#${app_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${REP_NUM}#${rep_num}#g' ./deploy/deploy.yaml"
 						}
 						sh "cat ./deploy/deploy.yaml"						
-						sh "kubectl apply -f ./deploy/deploy.yaml"
+						sh "kubectl apply -f ./deploy/deploy.yaml --record"
 						sh "sleep 10 && kubectl get pod -n webapp"
 						println "hooray, success"
 					}
