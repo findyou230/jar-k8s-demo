@@ -64,6 +64,7 @@ pipeline{
 				sh "pwd && ls && rm -rf project_dir"
 				sh "mkdir ./project_dir && cp ${jar_name} ./project_dir/"
 				sh "ls ./project_dir/"
+				echo "${BUILD_TIMESTAMP}"
 			}
 		}
 		stage("Check pod"){
@@ -85,9 +86,9 @@ pipeline{
 				//节点执行docker login命令进行认证
 				sh "docker login -u ${region_name}@${ACCESS_KEY_ID} -p ${SECRET_ACCESS_KEY} ${repository_url}"
                 		//构建镜像
-				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag} ."
+				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}_${BUILD_TIMESTAMP} ."
 				//推送镜像到华为云镜像仓库				
-				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}"
+				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}_${BUILD_TIMESTAMP}"
 				}
 			}
 		}
@@ -102,7 +103,7 @@ pipeline{
 						sh "cat ./deploy/deploy.yaml"
 						script{
 							sh "sed -i 's#\$NAMESPACE_NAME#${namespace_name}#g' ./deploy/deploy.yaml"
-							sh "sed -i 's#\${IMAGE_URL}#${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}#g' ./deploy/deploy.yaml"
+							sh "sed -i 's#\${IMAGE_URL}#${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}_${BUILD_TIMESTAMP}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${SECRET_NAME}#${secret_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${APP_NAME}#${app_name}#g' ./deploy/deploy.yaml"
 							sh "sed -i 's#\${REP_NUM}#${rep_num}#g' ./deploy/deploy.yaml"
