@@ -7,7 +7,6 @@ def app_name = "demo-app"
 def git_repo = "https://github.com/findyou230/jar-k8s-demo.git"
 def git_branch = "master"
 def mvn_dir = "/opt/maven"
-def target_dir = "./target"
 def mvn_cmd = "mvn clean package -Pproduct -Dmaven.test.skip=true"
 def base_image = "swr.cn-north-4.myhuaweicloud.com/sunshine-technology/openjdk:8u181-jdk"
 def jar_name = "hello-0.0.1-SNAPSHOT.jar"
@@ -24,8 +23,8 @@ def k8s_auth = "k8s-test-kube-config"    //存储在 Jenkins 凭证存储中的 
 pipeline{
 	agent{
 		kubernetes{
+			cloud 'cluster-test'
 			label "jenkins-agent"
-			cloud 'k8s-test'
         	}
 	}
 	tools{
@@ -74,10 +73,9 @@ pipeline{
 		stage("Check pod"){
  	        	steps{
 				echo "4. Check the POD and kubectl command before building"
- 	            		sh "kubectl get nodes"
+                sh "kubectl get nodes"
 				sh "kubectl get pod -n webapp"
- 	            		sh "kubectl get pod -n jenkins"
-				sh "ping harbor.fruitshop.com -c 3"
+                sh "kubectl get pod -n jenkins"
  	        	}
 		}
 		stage("Build image"){
@@ -93,6 +91,7 @@ pipeline{
 				sh "docker login -u ${region_name}@${ACCESS_KEY_ID} -p ${SECRET_ACCESS_KEY} ${repository_url}"
 				//推送镜像到华为云镜像仓库				
 				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}"
+				}
 			}
 		}
 		stage("Deploy"){
