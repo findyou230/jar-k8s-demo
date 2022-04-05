@@ -50,8 +50,8 @@ pipeline{
  					build_tag = sh(returnStdout: true, script: 'git rev-parse --short HEAD').trim()
 					if (env.BRANCH_NAME != 'master' && env.BRANCH_NAME != null) {
 					build_tag = "${env.BRANCH_NAME}-${build_tag}"
-				  }					
-			    } 
+					}					
+			    	} 
 				echo "Build Tag ${build_tag}"
 				sh "pwd && ls"
 			}
@@ -86,7 +86,7 @@ pipeline{
 				string(credentialsId: 'jenkins-secret-access-key', variable: 'SECRET_ACCESS_KEY')]) {
 				//节点执行docker login命令进行认证
 				sh "docker login -u ${region_name}@${ACCESS_KEY_ID} -p ${SECRET_ACCESS_KEY} ${repository_url}"
-                //构建镜像
+                		//构建镜像
 				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag} ."
 				//推送镜像到华为云镜像仓库				
 				sh "docker push ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag}"
