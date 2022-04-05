@@ -7,6 +7,11 @@ metadata:
   namespace: $NAMESPACE_NAME
 spec:
   replicas: ${REP_NUM}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+    type: RollingUpdate  
   selector:
     matchLabels:
       app: ${APP_NAME}
