@@ -23,6 +23,7 @@ spec:
         - name: ${APP_NAME}
           image: ${IMAGE_URL}
           imagePullPolicy: IfNotPresent   #Always
+          command: ["java","-jar","/web/app/hello-0.0.1-SNAPSHOP.jar"]
           resources:
             limits:
               cpu: 100m
