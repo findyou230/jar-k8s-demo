@@ -83,8 +83,8 @@ pipeline{
 		stage("Build image"){
 			steps{      //如果源路径是个目录,如果目标路径是个已经存在的目录,则docker会把源路径目录下的文件拷贝到该目录下。
 				echo "5. build docker images and push to Repositories"
-				sh "pwd"
-				sh "mv Dockerfile ./project_dir/ && ls && cd project_dir && ls -l"
+				sh "pwd && ls -l && rm -rf project_dir"
+				sh "mkdir project_dir && mv Dockerfile ./project_dir/ && ls && cd project_dir && ls -l"
 				sh "cd project_dir && docker build -t ${repository_url}/${image_dir}/${app_name}:${git_branch}_${build_tag} ."
 				//使用jenkins中secret text类型的credentials的特定方法
 			withCredentials([string(credentialsId: 'jenkins-access-key-id', variable: 'ACCESS_KEY_ID'),
