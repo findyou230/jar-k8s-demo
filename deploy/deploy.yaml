@@ -1,12 +1,18 @@
-apiVersion: apps/v1beta2
+#apiVersion: apps/v1beta2
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: "${APP_NAME}"
   labels:
     app: ${APP_NAME}
-  namespace: ${NAMESPACE_NAME}
+  namespace: $NAMESPACE_NAME   #不加大括号也可以
 spec:
-  replicas: ${REP_NAME}
+  replicas: ${REP_NUM}
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 0
+    type: RollingUpdate  
   selector:
     matchLabels:
       app: ${APP_NAME}
@@ -18,18 +24,19 @@ spec:
         version: v1
     spec:
       imagePullSecrets:
-        - name: registry-key
+        - name: ${SECRET_NAME}
       containers:
         - name: ${APP_NAME}
           image: ${IMAGE_URL}
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent   #Always
+          command: ["java","-jar","/web/app/hello-0.0.1-SNAPSHOT.jar"]
           resources:
             limits:
-               cpu: '100m'
-               memory: 256Mi
-             requests:
-               cpu: 100m
-               memory: 250Mi
+              cpu: 100m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 250Mi
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
           ports:
