@@ -27,20 +27,20 @@ spec:
       containers:
         - name: ${APP_NAME}
           image: ${IMAGE_URL}
-          imagePullPolicy: IfNotPresent   #Always
+          imagePullPolicy: Always  #IfNotPresent
+          ports:
+          - containerPort: ${CONTAINER_PORT}
+            protocol: TCP
           command: ["java","-jar","/web/app/hello-0.0.1-SNAPSHOT.jar"]
           resources:
             limits:
-              cpu: 100m
-              memory: 256Mi
+              cpu: 1000m
+              memory: 2048Mi
             requests:
-              cpu: 100m
-              memory: 250Mi
+              cpu: 1000m
+              memory: 2048Mi
           terminationMessagePath: /dev/termination-log
           terminationMessagePolicy: File
-          ports:
-            - containerPort: 80
-              protocol: TCP
           volumeMounts:
             - mountPath: /etc/localtime
               name: volume-localtime
