@@ -1,1 +1,1 @@
-# jar-k8s-demo
+通过Jenkins 拉取git仓库，通过编译后的jar 和准备好的Dockerfile 构建镜像，并推送到镜像仓库，最后更改deployment模版部署pod
